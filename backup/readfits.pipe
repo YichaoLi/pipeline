@@ -1,0 +1,39 @@
+# Pipeline file for guppi data.
+
+import os
+
+from core import dir_data
+import scipy as sp
+
+
+field = '15hr'
+file_middles = \
+	tuple(dir_data.get_data_files([68], '15hr', type='guppi'))
+#	tuple(dir_data.get_data_files([41,43, 44], '15hr', type='guppi'))
+#	tuple(dir_data.get_data_files(range(41,52), '15hr', type='guppi'))
+#	tuple(dir_data.get_data_files(range(51,52), '15hr', type='guppi'))
+#	tuple(dir_data.get_data_files([40], '15hr', type='guppi'))
+
+base_dir = os.getenv('GBT10B_OUT')
+#data_dir = base_dir + '/guppi_data/'
+#data_dir = os.getenv('GBT10B_DATA') + '/hanning/'
+#data_dir = os.getenv('GBT10B_DATA') + '/guppi_data/'
+data_dir = os.getenv('GBT10B_DATA') 
+prefix = ''
+map_prefix = 'med_' + field + '_68_'
+
+pipe_modules = []
+pipe_processes = 1
+
+from mapreader import readfits
+pipe_modules.append(readfits.Readfits)
+rd_input_root = data_dir
+rd_mid = file_middles
+rd_end = ".fits"
+rd_output_root = base_dir + 'read/' + prefix
+rd_output_end = ".fits"
+rd_scans = ()
+# All following steps will inherit this choice by default (because these are
+# the only IF's saved to the following fits files).
+rd_IFs = ()
+

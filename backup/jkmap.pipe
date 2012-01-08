@@ -1,0 +1,51 @@
+# Pipeline file for guppi data.
+
+import os
+
+#from core import dir_data
+import scipy as sp
+
+
+field = '15hr'
+base_dir = '/home/lixiating/Work/GBT/'
+prefix = ''
+map_prefix = ('jk_' + field + '_40-41-43_', 'jk_' + field + '_42_')
+
+pipe_modules = []
+pipe_processes = 1
+
+
+''' Remove the foreground of the jeckknife map'''
+#from jeckknife import jkerror
+#pipe_modules.append(jkerror.JackknifeError)
+je_processes = pipe_processes
+je_plot = False
+je_scan_num = (255, 311)
+je_input_root = base_dir + 'weight/'
+je_map_prefix = ('wt_pkrm_fgrm_' + map_prefix[0],
+						'wt_pkrm_fgrm_' + map_prefix[1])
+je_mid = "clean_map_"
+je_end = ".npy"
+je_output_root = base_dir + 'jkresult/' 
+
+je_number = 50.
+je_listbegin = (0, 0)
+#je_listend = 1
+je_listend = (3, 3)
+
+je_polarizations = ('I',)
+
+je_boxshape =  (128,64,32)
+je_boxunit = 9. # in unit Mpc
+je_discrete = 3
+je_Xrange = (1400,)
+je_Yrange = (-288.,288.)
+je_Zrange = (0.0,288.0)
+
+
+#Plot
+from jeckknife import jkplot
+pipe_modules.append(jkplot.PowerSpectrumPlot)
+pt_processes = 1
+pt_input_root = je_output_root
+pt_output_root = '../powerresult/'
