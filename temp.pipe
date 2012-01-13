@@ -1,0 +1,297 @@
+#pipeline for power spectrum test using simulation maps
+
+import os
+MAPPATH = os.getenv('MAP_15hr_SIM')
+print 'Note: Using data from :' + MAPPATH
+
+pipe_modules = []
+pipe_processes = 1
+
+"""  simulation maps  """
+num = 10
+imap_list = []
+nmap_list = []
+for i in range(num):
+	imap_list.append('sim_%03d.npy'%i)
+	nmap_list.append('sim_w_%03d.npy'%i)
+imap_list = tuple(imap_list)
+nmap_list = tuple(nmap_list)
+
+input_root = MAPPATH
+input_root_w = MAPPATH
+output_root = '../simulation/'
+#resultf = 'simmaps_with_beam'
+#resultf = 'simmaps_35bin'
+resultf = 'simmaps'
+
+#FKPweight = True 
+FKPweight = False 
+kmin = 0.07
+kmax = 0.9
+kbinNum = 15 
+#kmin = 0.01
+#kmax = 3.0
+#kbinNum = 35
+
+pkc_imap_list = []
+pkc_nmap_list = []
+for i in range(num):
+	pkc_imap_list.append(('sim_%03d.npy'%i,'sim_%03d.npy'%i))
+	pkc_nmap_list.append(('sim_w_%03d.npy'%i,'sim_w_%03d.npy'%i))
+pkc_imap_list = tuple(pkc_imap_list)
+pkc_nmap_list = tuple(pkc_nmap_list)
+
+
+#""" Pipe line """
+#from mkpower import prepare
+#pipe_modules.append(prepare.Prepare)
+#
+#from mkpower import mkpower_combine
+#pipe_modules.append(mkpower_combine.PowerSpectrumMaker)
+#
+#from mkpower import pycamb
+#pipe_modules.append(pycamb.CAMB)
+#
+#from mkpower import notlogplot
+#pipe_modules.append(notlogplot.PowerSpectrumPlot)
+#
+#from mkpower import plot_single
+#pipe_modules.append(plot_single.PowerSpectrumPlot)
+#
+#from mkpower import bias
+#pipe_modules.append(bias.BiasCalibrate)
+""" End """
+
+
+"""  Prepare """
+#from mkpower import prepare
+#pipe_modules.append(prepare.Prepare)
+pre_processes = 5
+pre_plot = False
+#pre_plot = True
+pre_input_root = input_root
+pre_input_root_w = input_root_w
+pre_output_root = output_root
+pre_imap_list = imap_list
+pre_nmap_list = nmap_list
+
+pre_boxshape = (512, 128, 64)
+pre_discrete = 2
+pre_boxunit = 2.
+pre_Xrange = (1400, pre_boxunit*pre_boxshape[0]+1400)
+pre_Yrange = (-pre_boxunit*pre_boxshape[1]*0.5, 
+   	 		  pre_boxunit*pre_boxshape[1]*0.5)
+pre_Zrange = (10.0, pre_boxunit*pre_boxshape[2]+10.0)
+#pre_Zrange = (-pre_boxunit*pre_boxshape[2]*0.5,
+#					pre_boxunit*pre_boxshape[2]*0.5)
+
+"""  Add Noise to the Map"""
+#from mkpower import noisemk
+#pipe_modules.append(noisemk.MakeNoise)
+nmk_processes = 3
+nmk_plot = False
+#nmk_plot = True
+#nmk_input_root = input_root
+#nmk_output_root = output_root
+nmk_sigma = 2.0
+nmk_mu = 0.0
+
+nmk_boxshape = (512, 128, 64)
+nmk_discrete = 2
+nmk_boxunit = 2.
+nmk_Xrange = (1400, pre_boxunit*pre_boxshape[0]+1400)
+nmk_Yrange = (-pre_boxunit*pre_boxshape[1]*0.5, 
+   	 		  pre_boxunit*pre_boxshape[1]*0.5)
+nmk_Zrange = (10.0, pre_boxunit*pre_boxshape[2]+10.0)
+
+
+"""  Calculate the Pk  """
+#from mkpower import mkpower
+#pipe_modules.append(mkpower.PowerSpectrumMaker)
+pk_processes = 1
+pk_plot = False 
+#pk_plot = True
+pk_saveweight = True
+pk_input_root = output_root
+pk_output_root = output_root
+pk_boxshape = pre_boxshape
+pk_discrete = pre_discrete
+pk_boxunit = pre_boxunit
+pk_Xrange = pre_Xrange
+pk_Yrange = pre_Yrange
+pk_Zrange = pre_Zrange
+
+pk_kbinNum = kbinNum
+
+#pk_FKPweight = True
+pk_FKPweight = FKPweight
+pk_OmegaHI = 1.e-3
+pk_Omegam = 0.24
+pk_OmegaL = 0.76
+
+"""  Calculate the combined Pk  """
+#from mkpower import mkpower_combine
+#pipe_modules.append(mkpower_combine.CrossPowerSpectrumMaker)
+pkc_processes = 3
+pkc_plot = False 
+pkc_saveweight = True
+pkc_input_root = output_root
+pkc_output_root = output_root
+pkc_resultf = resultf
+
+pkc_boxshape = pre_boxshape
+pkc_discrete = pre_discrete
+pkc_boxunit = pre_boxunit
+pkc_Xrange = pre_Xrange
+pkc_Yrange = pre_Yrange
+pkc_Zrange = pre_Zrange
+
+pkc_kbinNum = pk_kbinNum 
+pkc_kmin = kmin
+pkc_kmax = kmax
+
+#pkc_FKPweight = True
+pkc_FKPweight = FKPweight
+pkc_OmegaHI = 1.e-3
+pkc_Omegam = 0.24
+pkc_OmegaL = 0.76
+
+pkc_sme = False
+
+"""  Calling CAMB """
+#from mkpower import pycamb
+#pipe_modules.append(pycamb.CAMB)
+pcb_output_root = output_root + 'cambio/'
+pcb_do_nonlinear = 1
+pcb_transfer_redshift = 0.7
+pcb_transfer_high_precision = 'T'
+pcb_transfer_kmax = 1.5
+#pcb_transfer_k_per_logint = 400
+
+"""  Calculate the WindowF  """
+#from mkpower import windowf
+#pipe_modules.append(windowf.WindowFunctionMaker)
+wd_processes = 1
+#wd_plot = False
+wd_plot = True
+wd_input_root = output_root
+wd_output_root = output_root
+wd_boxshape = pk_boxshape
+wd_boxunit = pk_boxunit
+wd_FKPweight = FKPweight
+wd_discrete = 2
+wd_Xrange = (1400, pk_boxunit*pk_boxshape[0]+1400)
+wd_Yrange = (-pk_boxunit*pk_boxshape[1]*0.5, 
+              pk_boxunit*pk_boxshape[1]*0.5)
+wd_Zrange = (0.0, pk_boxunit*pk_boxshape[2])
+
+"""  Calculate the nonlinear Power Spectrum  """
+#from mkpower import nonlpower
+#pipe_modules.append(nonlpower.TheoryPowerSpectrumMaker)
+nl_processes = 1
+nl_plot = True
+#nl_plot = False
+nl_input_root = input_root
+nl_camb_input_root = pcb_output_root
+nl_output_root = output_root
+#nl_boxshape = pk_boxshape
+#nl_boxunit = pk_boxunit
+nl_boxshape = (256, 256, 256)
+nl_boxunit = 32.
+nl_boxshapelist = ((256,256,256),(256,256,256))
+nl_boxunitlist = (32.0, 8.0)
+nl_FKPweight = FKPweight
+nl_discrete = 2
+nl_Xrange = (1400, pk_boxunit*pk_boxshape[0]+1400)
+nl_Yrange = (-pk_boxunit*pk_boxshape[1]*0.5, 
+              pk_boxunit*pk_boxshape[1]*0.5)
+nl_Zrange = (0.0, pk_boxunit*pk_boxshape[2])
+
+nl_OmegaHI = 1.e-3
+nl_Omegam = 0.24
+nl_OmegaL = 0.76
+nl_z = 1.
+
+""" Calibrate the Bias of the Power Spectrum  """
+#form mkpower import bias
+#pipe_modules.append(bias.BiasCalibrate)
+bc_processes = 1
+bc_plot = True
+bc_input_root = output_root
+bc_output_root = bc_input_root
+bc_resultf = resultf
+bc_PKunit = 'mK'
+
+
+""" Window Function Plot """
+#from mkpower import plot
+#pipe_modules.append(plot.PowerSpectrumPlot)
+wpt_processes = 1
+wpt_input_root = nl_output_root
+wpt_output_root = output_root
+wpt_FKPweight = True
+wpt_boxshape = ((256,256,256), (256,256,256))
+wpt_boxunit = (8.0, 32.0)
+
+
+"""  Make JackKnife Map """
+#from mkpower import jkmap
+#pipe_modules.append(jkmap.JackKnifeErrorMap)
+jm_processes = 4
+jm_plot = False
+jm_input_root = input_root
+jm_jkn0 = 8
+jm_jkn1 = 4
+jm_jkn2 = 4
+jm_output_root = output_root + 'jkmap/'
+jm_boxshape = pre_boxshape
+jm_discrete = pre_discrete
+jm_boxunit = pre_boxunit
+jm_Xrange = pre_Xrange
+jm_Yrange = pre_Yrange
+jm_Zrange = pre_Zrange
+
+
+"""  Calculate the jk error (Better run in mpi)"""
+#from mkpower import jkerror
+#pipe_modules.append(jkerror.JackKnifeError)
+jk_processes = 4
+jk_plot = False
+jk_input_root = jm_output_root
+jk_jknumber = jm_jkn0*jm_jkn1*jm_jkn2
+jk_output_root = output_root
+jk_boxshape = pk_boxshape
+jk_discrete = pk_discrete
+jk_boxunit = pk_boxunit
+jk_Xrange = pk_Xrange
+jk_Yrange = pk_Yrange
+jk_Zrange = pk_Zrange
+jk_kbinNum = pk_kbinNum
+
+#jk_FKPweight = False
+jk_FKPweight = pk_FKPweight
+jk_OmegaHI = 1.e-3
+jk_Omegam = 0.24
+jk_OmegaL = 0.76
+jk_z = 1.
+
+
+"""  Plot  """
+#from mkpower import plot
+#pipe_modules.append(plot.PowerSpectrumPlot)
+pt_processes = 1
+pt_input_root = output_root
+pt_output_root = output_root
+pt_FKPweight = FKPweight
+pt_OmegaHI = 1.e-3
+pt_Omegam = 0.24
+pt_OmegaL = 0.76
+pt_z = 1.
+pt_ymin = 1.e-10
+pt_ymax = 1.e-6
+pt_PKunit = 'K'
+pt_resultf = resultf
+pt_kmin = pkc_kmin
+pt_kmax = pkc_kmax
+pt_delta_plot = True
+
