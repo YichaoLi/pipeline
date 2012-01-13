@@ -1,25 +1,24 @@
 #pipeline for power spectrum test using simulation maps
 
 import os
-MAPPATH = os.getenv('MAPS')
+MAPPATH = os.getenv('MAP_15hr_SIM')
+print 'Note: Using data from :' + MAPPATH
 
 pipe_modules = []
 pipe_processes = 1
 
 """  simulation maps  """
 num = 10
-filelist = []
-lastlist = []
+imap_list = []
+nmap_list = []
 for i in range(num):
-	#filelist.append('simideal_')
-	filelist.append('sim_')
-	lastlist.append('%03d'%i)
-filelist = tuple(filelist)
-lastlist = tuple(lastlist)
-middlist = ('', 'w')
-polarization = ('',)
+	imap_list.append('sim_%03d.npy'%i)
+	nmap_list.append('sim_w_%03d.npy'%i)
+imap_list = tuple(imap_list)
+nmap_list = tuple(nmap_list)
 
-input_root = MAPPATH + '15hrmaps_sim/'
+input_root = MAPPATH
+input_root_w = MAPPATH
 output_root = '../simulation/'
 #resultf = 'simmaps_with_beam'
 #resultf = 'simmaps_35bin'
@@ -34,50 +33,35 @@ kbinNum = 15
 #kmax = 3.0
 #kbinNum = 35
 
-pkc_hrlist = []
-pkc_ltlist = []
+pkc_imap_list = []
+pkc_nmap_list = []
 for i in range(num):
-	pkc_hrlist.append(('sim_','sim_'))
-	pkc_ltlist.append(( '%03d'%i, '%03d'%i))
-pkc_hrlist = tuple(pkc_hrlist)
-pkc_ltlist = tuple(pkc_ltlist)
+	pkc_imap_list.append(('sim_%03d.npy'%i,'sim_%03d.npy'%i))
+	pkc_nmap_list.append(('sim_w_%03d.npy'%i,'sim_w_%03d.npy'%i))
+pkc_imap_list = tuple(pkc_imap_list)
+pkc_nmap_list = tuple(pkc_nmap_list)
 
 
-""" Pipe line """
-from mkpower import prepare
-pipe_modules.append(prepare.Prepare)
-
-from mkpower import mkpower_combine
-pipe_modules.append(mkpower_combine.PowerSpectrumMaker)
-
-from mkpower import pycamb
-pipe_modules.append(pycamb.CAMB)
+#""" Pipe line """
+#from mkpower import prepare
+#pipe_modules.append(prepare.Prepare)
+#
+#from mkpower import mkpower_combine
+#pipe_modules.append(mkpower_combine.PowerSpectrumMaker)
+#
+#from mkpower import pycamb
+#pipe_modules.append(pycamb.CAMB)
 #
 #from mkpower import notlogplot
 #pipe_modules.append(notlogplot.PowerSpectrumPlot)
 #
-from mkpower import plot_single
-pipe_modules.append(plot_single.PowerSpectrumPlot)
+#from mkpower import plot_single
+#pipe_modules.append(plot_single.PowerSpectrumPlot)
 #
 #from mkpower import bias
 #pipe_modules.append(bias.BiasCalibrate)
 """ End """
 
-
-"""  Peak remove : clean map -> pkrm clean map"""
-#from mkpower import pkrm
-#pipe_modules.append(pkrm.PeakRemove)
-pr_processes = 1
-pr_plot = False
-#pr_plot = True
-pr_input_root = input_root
-pr_output_root = output_root
-pr_hr = filelist
-pr_mid = middlist
-pr_polarizations = polarization
-pr_last = lastlist
-
-#filelist = ('pkrm_'+filelist[0], 'pkrm_'+filelist[1])
 
 """  Prepare """
 #from mkpower import prepare
@@ -86,11 +70,10 @@ pre_processes = 5
 pre_plot = False
 #pre_plot = True
 pre_input_root = input_root
+pre_input_root_w = input_root_w
 pre_output_root = output_root
-pre_hr = filelist
-pre_mid = middlist
-pre_polarizations = polarization
-pre_last = lastlist
+pre_imap_list = imap_list
+pre_nmap_list = nmap_list
 
 pre_boxshape = (512, 128, 64)
 pre_discrete = 2
@@ -103,8 +86,6 @@ pre_Zrange = (10.0, pre_boxunit*pre_boxshape[2]+10.0)
 #					pre_boxunit*pre_boxshape[2]*0.5)
 
 """  Add Noise to the Map"""
-
-
 #from mkpower import noisemk
 #pipe_modules.append(noisemk.MakeNoise)
 nmk_processes = 3
@@ -112,10 +93,6 @@ nmk_plot = False
 #nmk_plot = True
 #nmk_input_root = input_root
 #nmk_output_root = output_root
-nmk_hr = filelist
-nmk_mid = middlist
-nmk_polarizations = polarization
-#nmk_last = lastlist
 nmk_sigma = 2.0
 nmk_mu = 0.0
 
@@ -128,18 +105,6 @@ nmk_Yrange = (-pre_boxunit*pre_boxshape[1]*0.5,
 nmk_Zrange = (10.0, pre_boxunit*pre_boxshape[2]+10.0)
 
 
-"""  Weight : clean map -> dirty map"""
-#from mkpower import weight
-#pipe_modules.append(weight.NoiseInversWeight)
-wt_processes = 1
-wt_plot = False
-wt_input_root = pr_output_root
-wt_output_root = output_root
-wt_hr = filelist
-wt_mid = middlist
-wt_polarizations = polarization
-
-
 """  Calculate the Pk  """
 #from mkpower import mkpower
 #pipe_modules.append(mkpower.PowerSpectrumMaker)
@@ -147,12 +112,8 @@ pk_processes = 1
 pk_plot = False 
 #pk_plot = True
 pk_saveweight = True
-pk_input_root = wt_output_root
+pk_input_root = output_root
 pk_output_root = output_root
-pk_hr = filelist
-pk_mid = middlist
-pk_polarizations = polarization
-pk_last = lastlist
 pk_boxshape = pre_boxshape
 pk_discrete = pre_discrete
 pk_boxunit = pre_boxunit
@@ -168,45 +129,16 @@ pk_OmegaHI = 1.e-3
 pk_Omegam = 0.24
 pk_OmegaL = 0.76
 
-"""  Calculate the Cross Pk  """
-#from mkpower import mkcrosspower
-#pipe_modules.append(mkcrosspower.CrossPowerSpectrumMaker)
-cpk_processes = 1
-cpk_plot = False 
-cpk_saveweight = True
-cpk_input_root = wt_output_root
-cpk_output_root = output_root
-cpk_hr = filelist
-cpk_mid = middlist
-cpk_polarizations = polarization
-cpk_last = lastlist
-cpk_boxshape = (256, 64, 32)
-cpk_discrete = 4
-cpk_boxunit = 8.0
-cpk_Xrange = (1400,)
-cpk_Yrange = (-pk_boxunit*pk_boxshape[1]*0.5, 
-				pk_boxunit*pk_boxshape[1]*0.5)
-cpk_Zrange = (0.0, pk_boxunit*pk_boxshape[2])
-
-#cpk_FKPweight = True
-cpk_FKPweight = FKPweight
-cpk_OmegaHI = 1.e-3
-cpk_Omegam = 0.24
-cpk_OmegaL = 0.76
-
 """  Calculate the combined Pk  """
 #from mkpower import mkpower_combine
 #pipe_modules.append(mkpower_combine.CrossPowerSpectrumMaker)
 pkc_processes = 3
 pkc_plot = False 
 pkc_saveweight = True
-pkc_input_root = wt_output_root
+pkc_input_root = output_root
 pkc_output_root = output_root
 pkc_resultf = resultf
-pkc_hr = ()
-pkc_mid = middlist
-pkc_polarizations = polarization
-pkc_last = ()
+
 pkc_boxshape = pre_boxshape
 pkc_discrete = pre_discrete
 pkc_boxunit = pre_boxunit
@@ -242,12 +174,8 @@ pcb_transfer_kmax = 1.5
 wd_processes = 1
 #wd_plot = False
 wd_plot = True
-wd_input_root = wt_output_root
+wd_input_root = output_root
 wd_output_root = output_root
-wd_hr = filelist
-wd_mid = middlist
-wd_polarizations = polarization
-wd_last = lastlist
 wd_boxshape = pk_boxshape
 wd_boxunit = pk_boxunit
 wd_FKPweight = FKPweight
@@ -263,10 +191,6 @@ wd_Zrange = (0.0, pk_boxunit*pk_boxshape[2])
 nl_processes = 1
 nl_plot = True
 #nl_plot = False
-nl_hr = filelist
-nl_mid = middlist
-nl_polarizations = polarization
-nl_last = lastlist
 nl_input_root = input_root
 nl_camb_input_root = pcb_output_root
 nl_output_root = output_root
@@ -288,7 +212,6 @@ nl_Omegam = 0.24
 nl_OmegaL = 0.76
 nl_z = 1.
 
-
 """ Calibrate the Bias of the Power Spectrum  """
 #form mkpower import bias
 #pipe_modules.append(bias.BiasCalibrate)
@@ -305,8 +228,6 @@ bc_PKunit = 'mK'
 #pipe_modules.append(plot.PowerSpectrumPlot)
 wpt_processes = 1
 wpt_input_root = nl_output_root
-wpt_hr = filelist
-wpt_last = lastlist
 wpt_output_root = output_root
 wpt_FKPweight = True
 wpt_boxshape = ((256,256,256), (256,256,256))
@@ -322,10 +243,6 @@ jm_input_root = input_root
 jm_jkn0 = 8
 jm_jkn1 = 4
 jm_jkn2 = 4
-jm_hr = filelist
-jm_mid = middlist
-jm_polarizations = polarization
-jm_last = lastlist
 jm_output_root = output_root + 'jkmap/'
 jm_boxshape = pre_boxshape
 jm_discrete = pre_discrete
@@ -342,10 +259,6 @@ jk_processes = 4
 jk_plot = False
 jk_input_root = jm_output_root
 jk_jknumber = jm_jkn0*jm_jkn1*jm_jkn2
-jk_hr = filelist
-jk_mid = middlist
-jk_polarizations = polarization
-jk_last = lastlist
 jk_output_root = output_root
 jk_boxshape = pk_boxshape
 jk_discrete = pk_discrete
@@ -368,8 +281,6 @@ jk_z = 1.
 #pipe_modules.append(plot.PowerSpectrumPlot)
 pt_processes = 1
 pt_input_root = output_root
-pt_hr = filelist
-pt_last = lastlist
 pt_output_root = output_root
 pt_FKPweight = FKPweight
 pt_OmegaHI = 1.e-3

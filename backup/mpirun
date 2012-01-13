@@ -1,1 +1,0 @@
-mpirun -np 4 python manager.py simulation.pipe
