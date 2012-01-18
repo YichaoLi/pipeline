@@ -1,67 +1,91 @@
-#pipeline for power spectrum test using simulation maps
+#########################################################################
+#                                                                       #
+#      This pipeline is used to calculate the cross power spectrum      #
+#                                                                       #
+#                                                                       #
+#########################################################################
 
 import os
 pipe_modules = []
 pipe_processes = 1
+WORKROOT = os.getenv('YICHAO_WORK')
 
 """  simulation maps  """
-MODE = 15
+MODE = 50
 
-MAPPATH = os.getenv('MAP_15hr_SIM')
-WETPATH = os.getenv('MAP_15hr_WiggleZ')
+FLAG = '_noconv'
 
-imap_root = [MAPPATH, MAPPATH,]
-imap_list = ['sim_000.npy', 'sim_000.npy',]
+NUM = 100
 
-nmap_root = [WETPATH,]
-nmap_list = ['reg15montecarlo.npy',]
+output_root = WORKROOT+'powerspectrum_cros_combined_%02dmodes%s/'%(MODE, FLAG)
+resultf = 'cros_combined_%02dmodes%s'%(MODE, FLAG)
+print output_root
 
+MAPPATH = os.getenv('MAP_15hr_COMBINED')
 WETPATH = os.getenv('MAP_15hr_COMBINED')
+imap_root = [MAPPATH,]
+imap_list = ['GBT_15hr_map_cleaned%s_%dmode_signal.npy'%(FLAG, MODE),]
+nmap_root = [WETPATH,]
+nmap_list = ['GBT_15hr_map_cleaned%s_%dmode_weight.npy'%(FLAG, MODE),]
 
+MAPPATH = os.getenv('MAP_15hr_WiggleZ_delta')
+WETPATH = os.getenv('MAP_15hr_WiggleZ')
+imap_root.append(MAPPATH)
+imap_list.append('reg15data.npy')
 nmap_root.append(WETPATH)
-nmap_list.append('GBT_15hr_map_cleaned_noconv_%dmode_weight.npy'%MODE)
+nmap_list.append('reg15montecarlo.npy')
+for i in range(NUM):
+	imap_root.append(MAPPATH)
+	imap_list.append('reg15rand%03d.npy'%i)
+	nmap_root.append(WETPATH)
+	nmap_list.append('reg15montecarlo.npy')
 
-#imap_root = tuple(imap_root)
-#nmap_root = tuple(nmap_root)
-#imap_list = tuple(imap_list)
-#nmap_list = tuple(nmap_list)
+pk_imap_pair = ('GBT_15hr_map_cleaned%s_%dmode_signal.npy'%(FLAG, MODE),
+					 'reg15data.npy')
+pk_nmap_pair = ('GBT_15hr_map_cleaned%s_%dmode_weight.npy'%(FLAG, MODE),
+					 'reg15montecarlo.npy')
 
-output_root = '../simulation_2side_%dmode/'%MODE
-#resultf = 'simmaps_with_beam'
-#resultf = 'simmaps_35bin'
-resultf = 'simmaps'
+pkc_imap_list = []
+pkc_nmap_list = []
+for i in range(NUM):
+	pkc_imap_list.append(
+		['GBT_15hr_map_cleaned%s_%dmode_signal.npy'%(FLAG, MODE),
+		 'reg15rand%03d.npy'%i])
+	pkc_nmap_list.append(
+		['GBT_15hr_map_cleaned%s_%dmode_weight.npy'%(FLAG, MODE),
+		 'reg15montecarlo.npy'])
 
-#FKPweight = True 
+cldir = '../bias/cros_%02dmodes%s/'%(MODE, FLAG)
+
+cutlist = [6,  7,  8,  15, 16, 18, 19, 20, 21, 22, 37,103,104,105,106,107,
+			  108,130,131,132,133,134,237,244,254,255,
+			  133,189,192,193,194,195,196,197,198,208,209,213,233,
+			  177,194,195,196,197,198,201,204,209,213,229,
+			  80, 171,175,179,182,183,187,212,218,219,
+			  180,206,207,211,79, 151,155,157,159,160,191,199,210,223,253,77,
+			  173,176,181,152,214,232]
+
 FKPweight = False 
 kmin = 0.07
 kmax = 0.9
 kbinNum = 15 
-#kmin = 0.01
-#kmax = 3.0
-#kbinNum = 35
-
-pk_imap_pair = ('sim_000.npy', 'sim_000.npy')
-pk_nmap_pair = ('reg15montecarlo.npy', 'reg15montecarlo.npy')
-
 
 #""" Pipe line """
 from mkpower import prepare
 pipe_modules.append(prepare.Prepare)
 
+from mkpower import mkpower_combine
+pipe_modules.append(mkpower_combine.PowerSpectrumMaker)
+
 from mkpower import mkpower
 pipe_modules.append(mkpower.PowerSpectrumMaker)
 
-#from mkpower import mkpower_combine
-#pipe_modules.append(mkpower_combine.PowerSpectrumMaker)
-#
 from mkpower import pycamb
 pipe_modules.append(pycamb.CAMB)
 
 from mkpower import plot_single
 pipe_modules.append(plot_single.PowerSpectrumPlot)
-#
-#from mkpower import bias
-#pipe_modules.append(bias.BiasCalibrate)
+
 """ End """
 
 
@@ -86,6 +110,8 @@ pre_Yrange = (-pre_boxunit*pre_boxshape[1]*0.5,
 pre_Zrange = (10.0, pre_boxunit*pre_boxshape[2]+10.0)
 #pre_Zrange = (-pre_boxunit*pre_boxshape[2]*0.5,
 #					pre_boxunit*pre_boxshape[2]*0.5)
+
+pre_cutlist = cutlist
 
 """  Add Noise to the Map"""
 #from mkpower import noisemk
@@ -118,6 +144,8 @@ pk_input_root = output_root
 pk_output_root = output_root
 pk_resultf = resultf
 
+pk_cldir = cldir
+
 pk_boxshape = pre_boxshape
 pk_discrete = pre_discrete
 pk_boxunit = pre_boxunit
@@ -138,12 +166,14 @@ pk_OmegaL = 0.76
 """  Calculate the combined Pk  """
 #from mkpower import mkpower_combine
 #pipe_modules.append(mkpower_combine.CrossPowerSpectrumMaker)
-pkc_processes = 3
+pkc_processes = 5
 pkc_plot = False 
 pkc_saveweight = True
 pkc_input_root = output_root
 pkc_output_root = output_root
 pkc_resultf = resultf
+
+pkc_cldir = cldir
 
 pkc_boxshape = pre_boxshape
 pkc_discrete = pre_discrete
@@ -227,6 +257,7 @@ bc_input_root = output_root
 bc_output_root = bc_input_root
 bc_resultf = resultf
 bc_PKunit = 'mK'
+bc_cross = False
 
 
 """ Window Function Plot """
@@ -292,11 +323,12 @@ pt_FKPweight = FKPweight
 pt_OmegaHI = 1.e-3
 pt_Omegam = 0.24
 pt_OmegaL = 0.76
-pt_z = 1.
-pt_ymin = 1.e-10
-pt_ymax = 1.e-6
+pt_z = 0.6
+pt_ymin = 3*1.e-6
+pt_ymax = 3*1.e-3
 pt_PKunit = 'K'
 pt_resultf = resultf
+pt_cross = True
 pt_kmin = pkc_kmin
 pt_kmax = pkc_kmax
 pt_delta_plot = True

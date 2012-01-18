@@ -1,11 +1,22 @@
-#pipeline for power spectrum test using simulation maps
+#########################################################################
+#                                                                       #
+#           This pipeline is used to get the reference for              #
+#           cross transfer function using simulation maps               #
+#                                                                       #
+#########################################################################
 
 import os
 pipe_modules = []
 pipe_processes = 1
+WORKROOT = os.getenv('YICHAO_WORK')
 
 """  simulation maps  """
-MODE = 15
+MODE = 50
+
+FLAG = '_noconv'
+
+output_root = WORKROOT+'simulation_cros_%02dmodes%s/'%(MODE, FLAG)
+resultf = 'simmaps'
 
 MAPPATH = os.getenv('MAP_15hr_SIM')
 WETPATH = os.getenv('MAP_15hr_WiggleZ')
@@ -19,30 +30,16 @@ nmap_list = ['reg15montecarlo.npy',]
 WETPATH = os.getenv('MAP_15hr_COMBINED')
 
 nmap_root.append(WETPATH)
-nmap_list.append('GBT_15hr_map_cleaned_noconv_%dmode_weight.npy'%MODE)
+nmap_list.append('GBT_15hr_map_cleaned%s_%dmode_weight.npy'%(FLAG, MODE))
 
-#imap_root = tuple(imap_root)
-#nmap_root = tuple(nmap_root)
-#imap_list = tuple(imap_list)
-#nmap_list = tuple(nmap_list)
+pk_imap_pair = ('sim_000.npy', 'sim_000.npy')
+pk_nmap_pair = ('GBT_15hr_map_cleaned%s_%dmode_weight.npy'%(FLAG, MODE),
+					 'reg15montecarlo.npy')
 
-output_root = '../simulation_2side_%dmode/'%MODE
-#resultf = 'simmaps_with_beam'
-#resultf = 'simmaps_35bin'
-resultf = 'simmaps'
-
-#FKPweight = True 
 FKPweight = False 
 kmin = 0.07
 kmax = 0.9
 kbinNum = 15 
-#kmin = 0.01
-#kmax = 3.0
-#kbinNum = 35
-
-pk_imap_pair = ('sim_000.npy', 'sim_000.npy')
-pk_nmap_pair = ('reg15montecarlo.npy', 'reg15montecarlo.npy')
-
 
 #""" Pipe line """
 from mkpower import prepare
@@ -51,14 +48,11 @@ pipe_modules.append(prepare.Prepare)
 from mkpower import mkpower
 pipe_modules.append(mkpower.PowerSpectrumMaker)
 
-#from mkpower import mkpower_combine
-#pipe_modules.append(mkpower_combine.PowerSpectrumMaker)
+#from mkpower import pycamb
+#pipe_modules.append(pycamb.CAMB)
 #
-from mkpower import pycamb
-pipe_modules.append(pycamb.CAMB)
-
-from mkpower import plot_single
-pipe_modules.append(plot_single.PowerSpectrumPlot)
+#from mkpower import plot_single
+#pipe_modules.append(plot_single.PowerSpectrumPlot)
 #
 #from mkpower import bias
 #pipe_modules.append(bias.BiasCalibrate)
