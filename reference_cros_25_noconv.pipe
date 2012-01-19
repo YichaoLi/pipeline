@@ -1,7 +1,7 @@
 #########################################################################
 #                                                                       #
-#      This pipeline is used to get the 2side transfer function         #
-#      for cross power using simulation maps                            #
+#           This pipeline is used to get the reference for              #
+#           cross transfer function using simulation maps               #
 #                                                                       #
 #########################################################################
 
@@ -13,37 +13,35 @@ WORKROOT = os.getenv('YICHAO_WORK')
 """  simulation maps  """
 MODE = 25
 
-FLAG = '_noconv'
+FLAG = '' #'_noconv'
 BEAM = '_beam'
 
-output_root = WORKROOT + 'bias/'
-output_root = output_root + 'cros_%02dmodes%s%s/'%(MODE, FLAG, BEAM)
+output_root = WORKROOT+'simulation_cros_%02dmodes%s%s/'%(MODE, FLAG, BEAM)
 resultf = 'simmaps'
+
+sim_flag = ''
+if BEAM == '_beam':
+	sim_flag = '_beam'
+	if FLAG == '':
+		sim_flag = sim_flag + '_conv'
 
 MAPPATH = os.getenv('MAP_15hr_SIM')
 WETPATH = os.getenv('MAP_15hr_WiggleZ')
 
-imap_root = [MAPPATH,]
-imap_list = ['sim_000.npy',]
+imap_root = [MAPPATH, MAPPATH,]
+imap_list = ['sim%s_000.npy'%sim_flag, 'sim_000.npy',]
 
 nmap_root = [WETPATH,]
 nmap_list = ['reg15montecarlo.npy',]
 
-MAPPATH = os.getenv('MAP_15hr_COMBINED')
 WETPATH = os.getenv('MAP_15hr_COMBINED')
-
-imap_root.append(MAPPATH)
-imap_list.append('sim_15hr_cleaned%s_%dmode_signal.npy'%(FLAG, MODE))
 
 nmap_root.append(WETPATH)
 nmap_list.append('GBT_15hr_map_cleaned%s_%dmode_weight.npy'%(FLAG, MODE))
 
-pk_imap_pair = ('sim_15hr_cleaned%s_%dmode_signal.npy'%(FLAG, MODE), 
-					 'sim_000.npy')
+pk_imap_pair = ('sim%s_000.npy'%sim_flag, 'sim_000.npy')
 pk_nmap_pair = ('GBT_15hr_map_cleaned%s_%dmode_weight.npy'%(FLAG, MODE),
 					 'reg15montecarlo.npy')
-
-bc_simmap_root = WORKROOT + 'simulation_cros_%02dmodes%s%s/'%(MODE, FLAG, BEAM)
 
 FKPweight = False 
 kmin = 0.07
@@ -63,8 +61,8 @@ pipe_modules.append(mkpower.PowerSpectrumMaker)
 #from mkpower import plot_single
 #pipe_modules.append(plot_single.PowerSpectrumPlot)
 #
-from mkpower import bias
-pipe_modules.append(bias.BiasCalibrate)
+#from mkpower import bias
+#pipe_modules.append(bias.BiasCalibrate)
 """ End """
 
 
@@ -225,12 +223,11 @@ nl_z = 1.
 #form mkpower import bias
 #pipe_modules.append(bias.BiasCalibrate)
 bc_processes = 1
-bc_plot = False
+bc_plot = True
 bc_input_root = output_root
 bc_output_root = bc_input_root
 bc_resultf = resultf
 bc_PKunit = 'mK'
-bc_cross = False
 
 
 """ Window Function Plot """

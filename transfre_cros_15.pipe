@@ -11,7 +11,7 @@ pipe_processes = 1
 WORKROOT = os.getenv('YICHAO_WORK')
 
 """  simulation maps  """
-MODE = 25
+MODE = 15
 
 FLAG = '_noconv'
 BEAM = '_beam'

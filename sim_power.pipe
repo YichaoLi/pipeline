@@ -5,7 +5,7 @@ pipe_modules = []
 pipe_processes = 1
 
 """  simulation maps  """
-MODE = 15
+MODE = 50
 
 MAPPATH = os.getenv('MAP_15hr_SIM')
 WETPATH = os.getenv('MAP_15hr_WiggleZ')
